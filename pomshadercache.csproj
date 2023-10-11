@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<TargetFramework>net7</TargetFramework>
+		<OutputType>Library</OutputType>
+		<RootNamespace>PowerOfMind.ShaderCache</RootNamespace>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<Nullable>disable</Nullable>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<OutputPath>..\..\bin\Debug\pomshadercache\</OutputPath>
+		<IntermediateOutputPath>..\..\obj\Debug\pomshadercache\</IntermediateOutputPath>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<OutputPath>..\..\bin\Release\pomshadercache\</OutputPath>
+		<IntermediateOutputPath>..\..\obj\Release\pomshadercache\</IntermediateOutputPath>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="0Harmony">
+			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\0Harmony.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="OpenTK.Core">
+			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\OpenTK.Core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="OpenTK.Graphics">
+			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\OpenTK.Graphics.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="protobuf-net">
+			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\protobuf-net.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="VintagestoryAPI">
+			<HintPath>C:\Games\Vintagestory18.NET7\VintagestoryAPI.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="VintagestoryLib">
+			<HintPath>..\..\..\Games\Vintagestory18.NET7\VintagestoryLib.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>C:\Games\Vintagestory18.NET7\Lib\Newtonsoft.Json.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="modinfo.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(ProjectDir)&quot; &#xD;&#xA;copy &quot;$(TargetDir)\$(TargetName).pdb&quot; &quot;$(ProjectDir)&quot; " />
+	</Target>
+</Project>

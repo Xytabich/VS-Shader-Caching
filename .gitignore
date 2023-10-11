@@ -1,0 +1,5 @@
+/pomshadercache.dll
+/pomshadercache.pdb
+*.csproj.user
+/bin/
+/obj/

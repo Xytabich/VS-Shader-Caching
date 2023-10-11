@@ -1,0 +1,12 @@
+{
+	"type": "code",
+	"modid": "pomshadercache",
+	"name": "Shader Caching",
+	"side": "Client",
+	"authors": [ "Xytabich" ],
+	"description": "Shader caching",
+	"version": "1.0.0",
+	"dependencies": {
+		"game": "1.18.8"
+	}
+}
