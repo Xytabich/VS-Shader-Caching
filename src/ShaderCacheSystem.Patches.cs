@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -15,6 +16,19 @@ namespace PowerOfMind.ShaderCache
 {
 	public partial class ShaderCacheSystem
 	{
+		private static readonly Action<ShaderProgram, string, HashSet<string>> collectShaderUniformNames = null;
+
+		static ShaderCacheSystem()
+		{
+			var shader = Expression.Parameter(typeof(ShaderProgram));
+			var code = Expression.Parameter(typeof(string));
+			var list = Expression.Parameter(typeof(HashSet<string>));
+			collectShaderUniformNames = Expression.Lambda<Action<ShaderProgram, string, HashSet<string>>>(
+				Expression.Call(shader, "collectUniformNames", null, code, list),
+				shader, code, list
+			).Compile();
+		}
+
 		private static bool CompileShaderPrefix(ShaderProgram __instance, ref bool __result, out bool __state)
 		{
 			__state = false;
@@ -73,9 +87,10 @@ namespace PowerOfMind.ShaderCache
 				if(!CollectShaderHashes(__instance, hashes)) return;
 
 				var key = new AssetLocation(__instance.AssetDomain, __instance.PassName);
-				system.SaveShaderProgramToCache(key, __instance.ProgramId, hashes);
-
-				ScreenManager.Platform.Logger.Notification("Cached shader program for render pass {0}.", key);
+				if(system.SaveShaderProgramToCache(key, __instance.ProgramId, hashes))
+				{
+					ScreenManager.Platform.Logger.Notification("Cached shader program for render pass {0}.", key);
+				}
 			}
 		}
 

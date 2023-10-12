@@ -5,7 +5,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
 using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -17,20 +16,8 @@ namespace PowerOfMind.ShaderCache
 	public partial class ShaderCacheSystem : ModSystem
 	{
 		private const byte SHADER_CACHE_VERSION = 1;
-		private static readonly Action<ShaderProgram, string, HashSet<string>> collectShaderUniformNames = null;
 
 		private static ShaderCacheSystem system = null;
-
-		static ShaderCacheSystem()
-		{
-			var shader = Expression.Parameter(typeof(ShaderProgram));
-			var code = Expression.Parameter(typeof(string));
-			var list = Expression.Parameter(typeof(HashSet<string>));
-			collectShaderUniformNames = Expression.Lambda<Action<ShaderProgram, string, HashSet<string>>>(
-				Expression.Call(shader, "collectUniformNames", null, code, list),
-				shader, code, list
-			).Compile();
-		}
 
 		private Dictionary<AssetLocation, int> cachedShaders = null;
 		private Stack<int> freeEntries = null;
@@ -47,6 +34,9 @@ namespace PowerOfMind.ShaderCache
 		public override void StartClientSide(ICoreClientAPI api)
 		{
 			system = this;
+
+			this.api = api;
+
 			api.Event.ReloadShader += OnReloadShaders;
 			harmony = new Harmony("pomshadercache");
 
@@ -70,12 +60,18 @@ namespace PowerOfMind.ShaderCache
 			}
 		}
 
+		/// <summary>
+		/// Returns <see langword="true"/> if there is a cache entry for this key.
+		/// </summary>
 		public bool HasCachedShaderProgram(AssetLocation shaderKey)
 		{
 			if(cachedShaders == null) LoadShadersCache();
 			return cachedShaders.ContainsKey(shaderKey);
 		}
 
+		/// <summary>
+		/// Returns <see langword="true"/> if an extension for saving a binary program is available.
+		/// </summary>
 		public unsafe bool HasProgramBinaryArb()
 		{
 			if(!arbGetProgramBinary.HasValue)
@@ -86,6 +82,9 @@ namespace PowerOfMind.ShaderCache
 			return arbGetProgramBinary.Value;
 		}
 
+		/// <summary>
+		/// Forces the shader cache to be saved.
+		/// </summary>
 		public void SaveShadersCache()
 		{
 			if(cachedShaders != null && shaderCacheDirty)
@@ -109,6 +108,14 @@ namespace PowerOfMind.ShaderCache
 			}
 		}
 
+		/// <summary>
+		/// Tries to load a shader from the cache, returns <see langword="true"/> and the program <paramref name="handle"/> if successful, otherwise returns <see langword="false"/> and an <paramref name="error"/>
+		/// </summary>
+		/// <typeparam name="TEnumerable"></typeparam>
+		/// <param name="shaderKey">Shader key name</param>
+		/// <param name="stagesHash">An enumerated list of stage hashes that are used to determine shader changes</param>
+		/// <param name="handle">OpenGL shader program id</param>
+		/// <param name="error">The reason why the shader load failed</param>
 		public unsafe bool TryLoadCachedShaderProgram<TEnumerable>(AssetLocation shaderKey, TEnumerable stagesHash, out int handle, out string error)
 			where TEnumerable : IEnumerable<ShaderHashInfo>
 		{
@@ -122,7 +129,7 @@ namespace PowerOfMind.ShaderCache
 			if(cachedShaders == null) LoadShadersCache();
 
 			handle = 0;
-			error = null;
+			error = "Cache entry not found";
 			if(cachedShaders.TryGetValue(shaderKey, out var id))
 			{
 				string path = null;
@@ -140,6 +147,7 @@ namespace PowerOfMind.ShaderCache
 								else tmpShaderHashSet.Clear();
 								tmpShaderHashSet.UnionWith(stagesHash);
 
+								error = "Hash mismatch";
 								int stageCount = stream.ReadByte();
 								if(stageCount == tmpShaderHashSet.Count)
 								{
@@ -213,20 +221,27 @@ namespace PowerOfMind.ShaderCache
 			return false;
 		}
 
-		public unsafe void SaveShaderProgramToCache<TEnumerable>(AssetLocation shaderKey, int handle, TEnumerable stagesHash)
+		/// <summary>
+		/// Will try to save the shader to cache, returns true if successful
+		/// </summary>
+		/// <typeparam name="TEnumerable"></typeparam>
+		/// <param name="shaderKey">Shader key name</param>
+		/// <param name="handle">OpenGL shader program id</param>
+		/// <param name="stagesHash">An enumerated list of stage hashes that are used to determine shader changes</param>
+		public unsafe bool SaveShaderProgramToCache<TEnumerable>(AssetLocation shaderKey, int handle, TEnumerable stagesHash)
 			where TEnumerable : IEnumerable<ShaderHashInfo>
 		{
-			if(!HasProgramBinaryArb()) return;
+			if(!HasProgramBinaryArb()) return false;
 
 			if(tmpShaderHashSet == null) tmpShaderHashSet = new HashSet<ShaderHashInfo>();
 			else tmpShaderHashSet.Clear();
 			tmpShaderHashSet.UnionWith(stagesHash);
-			if(tmpShaderHashSet.Count == 0) return;
+			if(tmpShaderHashSet.Count == 0) return false;
 
 			GL.GetProgram(handle, GetProgramParameterName.ProgramBinaryRetrievableHint, out var state);
-			if(GL.GetError() != ErrorCode.NoError || state != (int)All.True) return;
+			if(GL.GetError() != ErrorCode.NoError || state != (int)All.True) return false;
 			GL.GetProgram(handle, GetProgramParameterName.ProgramBinaryLength, out var size);
-			if(GL.GetError() != ErrorCode.NoError || size == 0) return;
+			if(GL.GetError() != ErrorCode.NoError || size == 0) return false;
 
 			if(cachedShaders == null) LoadShadersCache();
 			if(!cachedShaders.TryGetValue(shaderKey, out var id))
@@ -249,7 +264,7 @@ namespace PowerOfMind.ShaderCache
 				if(GL.GetError() != ErrorCode.NoError)
 				{
 					ArrayPool<byte>.Shared.Return(bytes);
-					return;
+					return false;
 				}
 
 				var path = Path.Combine(GamePaths.Cache, "pomshadercache", (id & 255).ToString("x2"));
@@ -283,8 +298,10 @@ namespace PowerOfMind.ShaderCache
 					shaderCacheDirty = true;
 				}
 				ArrayPool<byte>.Shared.Return(bytes);
+				return true;
 			}
 			catch { }
+			return false;
 		}
 
 		private void LoadShadersCache()
