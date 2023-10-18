@@ -15,6 +15,7 @@ namespace PowerOfMind.ShaderCache
 {
 	public partial class ShaderCacheSystem : ModSystem
 	{
+		private const int ENTRIES_VERSION = 2;
 		private const byte SHADER_CACHE_VERSION = 1;
 
 		private static ShaderCacheSystem system = null;
@@ -83,6 +84,21 @@ namespace PowerOfMind.ShaderCache
 		}
 
 		/// <summary>
+		/// Deletes all entries and cache files.
+		/// </summary>
+		public void ClearShadersCache()
+		{
+			if(entriesCounter == 0) return;
+
+			var path = Path.Combine(GamePaths.Cache, "pomshadercache");
+			if(Directory.Exists(path)) Directory.Delete(path, true);
+
+			cachedShaders = new Dictionary<AssetLocation, int>();
+			freeEntries = new Stack<int>();
+			entriesCounter = 0;
+		}
+
+		/// <summary>
 		/// Forces the shader cache to be saved.
 		/// </summary>
 		public void SaveShadersCache()
@@ -101,10 +117,32 @@ namespace PowerOfMind.ShaderCache
 					File.WriteAllText(path, JsonConvert.SerializeObject(new CacheEntries() {
 						cache = cachedShaders,
 						free = freeEntries,
-						counter = entriesCounter
+						counter = entriesCounter,
+						version = ENTRIES_VERSION
 					}));
 				}
 				catch { }
+			}
+		}
+
+		/// <summary>
+		/// Deletes the entry and cached shader file.
+		/// </summary>
+		/// <param name="shaderKey">Shader key name</param>
+		public void RemoveShaderProgramCache(AssetLocation shaderKey)
+		{
+			if(cachedShaders == null) LoadShadersCache();
+
+			if(cachedShaders.TryGetValue(shaderKey, out var id))
+			{
+				cachedShaders.Remove(shaderKey);
+				freeEntries.Push(id);
+
+				string path = Path.Combine(GamePaths.Cache, "pomshadercache", GetCacheSubdir(id), GetCacheFilename(id));
+				if(!string.IsNullOrEmpty(path) && File.Exists(path))
+				{
+					File.Delete(path);
+				}
 			}
 		}
 
@@ -135,7 +173,7 @@ namespace PowerOfMind.ShaderCache
 				string path = null;
 				try
 				{
-					path = Path.Combine(GamePaths.Cache, "pomshadercache", (id & 255).ToString("x2"), id.ToString("x8"));
+					path = Path.Combine(GamePaths.Cache, "pomshadercache", GetCacheSubdir(id), GetCacheFilename(id));
 
 					if(File.Exists(path))
 					{
@@ -222,7 +260,7 @@ namespace PowerOfMind.ShaderCache
 		}
 
 		/// <summary>
-		/// Will try to save the shader to cache, returns true if successful
+		/// Will try to save the shader to cache, returns <see langword="true"/> if successful.
 		/// </summary>
 		/// <typeparam name="TEnumerable"></typeparam>
 		/// <param name="shaderKey">Shader key name</param>
@@ -267,9 +305,9 @@ namespace PowerOfMind.ShaderCache
 					return false;
 				}
 
-				var path = Path.Combine(GamePaths.Cache, "pomshadercache", (id & 255).ToString("x2"));
+				var path = Path.Combine(GamePaths.Cache, "pomshadercache", GetCacheSubdir(id));
 				if(!Directory.Exists(path)) Directory.CreateDirectory(path);
-				path = Path.Combine(path, id.ToString("x8"));
+				path = Path.Combine(path, GetCacheFilename(id));
 				using(var stream = File.OpenWrite(path))
 				{
 					stream.SetLength(0);
@@ -310,17 +348,30 @@ namespace PowerOfMind.ShaderCache
 			entriesCounter = 0;
 			if(File.Exists(path))
 			{
+				bool removeDir = false;
 				try
 				{
 					var entries = JsonConvert.DeserializeObject<CacheEntries>(File.ReadAllText(path));
 					if(entries != null)
 					{
-						cachedShaders = entries.cache;
-						freeEntries = entries.free;
-						entriesCounter = entries.counter;
+						if(entries.version == ENTRIES_VERSION)
+						{
+							cachedShaders = entries.cache;
+							freeEntries = entries.free;
+							entriesCounter = entries.counter;
+						}
+						else
+						{
+							removeDir = true;
+						}
 					}
 				}
 				catch { }
+
+				if(removeDir)
+				{
+					Directory.Delete(Path.Combine(GamePaths.Cache, "pomshadercache"), true);
+				}
 			}
 			if(cachedShaders == null)
 			{
@@ -340,8 +391,19 @@ namespace PowerOfMind.ShaderCache
 			return true;
 		}
 
+		private static string GetCacheSubdir(int id)
+		{
+			return (((uint)id >> 4) & 255).ToString("x2");
+		}
+
+		private static string GetCacheFilename(int id)
+		{
+			return id.ToString("x8");
+		}
+
 		private class CacheEntries
 		{
+			public int version;
 			public Dictionary<AssetLocation, int> cache;
 			public Stack<int> free;
 			public int counter;
