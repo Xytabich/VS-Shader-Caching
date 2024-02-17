@@ -8,12 +8,12 @@
 		<Nullable>disable</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-		<OutputPath>..\..\bin\Debug\pomshadercache\</OutputPath>
+		<OutputPath>$(MSBuildProjectDirectory)\bin</OutputPath>
 		<IntermediateOutputPath>..\..\obj\Debug\pomshadercache\</IntermediateOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<OutputPath>..\..\bin\Release\pomshadercache\</OutputPath>
+		<OutputPath>$(MSBuildProjectDirectory)\bin</OutputPath>
 		<IntermediateOutputPath>..\..\obj\Release\pomshadercache\</IntermediateOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -55,6 +55,6 @@
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(ProjectDir)&quot; &#xD;&#xA;copy &quot;$(TargetDir)\$(TargetName).pdb&quot; &quot;$(ProjectDir)&quot; " />
+		<Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(MSBuildProjectDirectory)&quot; &#xD;&#xA;copy &quot;$(TargetDir)\$(TargetName).pdb&quot; &quot;$(MSBuildProjectDirectory)&quot; " />
 	</Target>
 </Project>
