@@ -19,31 +19,31 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="0Harmony">
-			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\0Harmony.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\Lib\0Harmony.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="OpenTK.Core">
-			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\OpenTK.Core.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\Lib\OpenTK.Core.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="OpenTK.Graphics">
-			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\OpenTK.Graphics.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\Lib\OpenTK.Graphics.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="protobuf-net">
-			<HintPath>..\..\..\Games\Vintagestory18.NET7\Lib\protobuf-net.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\Lib\protobuf-net.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="VintagestoryAPI">
-			<HintPath>C:\Games\Vintagestory18.NET7\VintagestoryAPI.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\VintagestoryAPI.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="VintagestoryLib">
-			<HintPath>..\..\..\Games\Vintagestory18.NET7\VintagestoryLib.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\VintagestoryLib.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="Newtonsoft.Json">
-			<HintPath>C:\Games\Vintagestory18.NET7\Lib\Newtonsoft.Json.dll</HintPath>
+			<HintPath>C:\Games\Vintagestory19\Lib\Newtonsoft.Json.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>

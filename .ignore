@@ -1,2 +1,3 @@
 /src/
-*.cs
+/obj/
+/bin/
