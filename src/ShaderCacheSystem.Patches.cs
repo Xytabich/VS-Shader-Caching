@@ -166,16 +166,16 @@ namespace PowerOfMind.ShaderCache
 			{
 				int approxSize = shaderCode.Length + 16;
 				if(!string.IsNullOrEmpty(shader.PrefixCode)) approxSize += shader.PrefixCode.Length;
-				int versionIndex = Math.Max(0, shaderCode.IndexOf("#version"));
+				int versionIndex = shaderCode.IndexOf("#version");
 				int newLineIndex = -1;
 
 				var sb = new StringBuilder(approxSize);
 				if(RuntimeEnv.OS == OS.Mac)
 				{
-					sb.Append("#version 330");
-					if(versionIndex < 0)
+					sb.AppendLine("#version 330");
+					if(versionIndex >= 0)
 					{
-						sb.AppendLine();
+						newLineIndex = shaderCode.IndexOf("\n", versionIndex);
 					}
 				}
 				else if(versionIndex >= 0)
